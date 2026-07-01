@@ -1,0 +1,50 @@
+sobang_navigation_node:
+    # Reference coordinate system : Forward-Left-Up
+  ros__parameters:  
+    # IMU Setting 
+    imu_topic : "/vectornav/imu"
+    imu_rate: 200
+    do_align : false
+    align_time : 10.0
+    ned : false # FLU(Forward-Left-Up) : false, FRD(Forward-Right-Down) : true.
+    # Radar Setting
+    radar_topic : "/mmwave/radarScan"
+    radar_rate : 20    
+    # Extrinsic Param
+    imu_t_radar : [0.0, 0.0, 0.0]
+    imu_R_radar : [0.0, 0.0, 0.0]
+    # Sonar Setting
+    sonar_topic : "/sonar/range"
+    sonar_rate : 10
+    imu_t_sonar : [0.0, 0.0, -0.06]
+    # Prior Information (Basically Forward-Left-Up coordinate system)
+    init_pos : [0.0, 0.0, 0.96]
+    init_att : [0.0, 0.0, 0.0]
+    init_gyro_bias : [0.0008, -0.0016, 0.0003]
+    # Standard Deviations of initial state covariance param
+    init_pos_cov : [0.8, 0.8, 0.8]    
+    init_att_cov : [1.0, 1.0, 1.0]
+    init_gyro_bias_cov : [0.001, 0.001, 0.001]
+    init_scale_cov : [0.0001, 0.0001, 0.0001]
+    # Standard Deviations of process noise covariance param
+    gyro_noise : [0.001, 0.001, 0.001]
+    gyro_bias_noise : [0.0001, 0.0001, 0.0001]
+    radar_vel_noise : [0.005, 0.005, 0.005]
+    radar_scale_noise : [0.0001, 0.0001, 0.0001]
+    # Measurement Covariance
+    uwb_cov : [5.5, 5.5, 4.5]
+    uwb_range_cov : 5.5
+    sonar_cov : 0.1
+    # Other settings
+    view_state : false
+    view_path : true
+
+uwb_localizer_node:
+  ros__parameters:
+    # UWB Setting
+    uwb_topic : "/uwb/range"
+    # Reference coordinate system : Forward-Left-Up
+    anchor_id_lists : [1,2,3,4,5,6,7,8]
+    anchor_pos_x : [ 7.800, 12.600,   7.800,   0.000,  -7.200, 12.600,  -7.20,  0.000]
+    anchor_pos_y : [-0.125, -6.125, -12.125, -11.525, -12.125, -0.125,  0.476, -0.725]
+    anchor_pos_z : [ 0.000,  0.000,   0.700,   0.000,   0.000,  0.700,  0.000,  0.000]
