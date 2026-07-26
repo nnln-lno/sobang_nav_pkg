@@ -35,12 +35,17 @@ namespace navigation
       
     uwb_range_subscriber_ = this->create_subscription<sobang_navigation::msg::UwbData>(
       "/uwb/range_array", 100, std::bind(&Navigation::uwbRangeCallback, this, _1));
-
-    // sonar_subscriber_ = this->create_subscription<sensor_msgs::msg::Range>(
-    //   sonar_topic_, 10, std::bind(&Navigation::sonarCallback, this, _1));
     
-    sonar_subscriber_ = this->create_subscription<px4_msgs::msg::DistanceSensor>(
-         sonar_topic_, qos_profile, std::bind(&Navigation::sonarCallback, this, _1));
+    if (sonar_topic_ == "/fmu/out/distance_sensor")
+    {
+      px4_sonar_subscriber_ = this->create_subscription<px4_msgs::msg::DistanceSensor>(
+         sonar_topic_, qos_profile, std::bind(&Navigation::px4_sonarCallback, this, _1));
+    }
+    else
+    {
+      ros2_sonar_subscriber_ = this->create_subscription<sensor_msgs::msg::Range>(
+         sonar_topic_, 10, std::bind(&Navigation::ros2_sonarCallback, this, _1));
+    }
 
     if (view_path_)
     {
@@ -53,7 +58,7 @@ namespace navigation
     timer_ = this->create_wall_timer(
       500ms, std::bind(&Navigation::timer_callback, this));
 
-    px4_timer_ = this->create_wall_timer(
+    rclcpp::TimerBase::SharedPtr px4_timer_ = this->create_wall_timer(
       std::chrono::duration<double>(1.0 / px4_fc_rate_), std::bind(&Navigation::px4_timer_callback, this));
   }
 
@@ -229,18 +234,32 @@ namespace navigation
     measurementUpdate(getState(), residual, Hk, R_uwb_range*MatXd::Identity(count, count)); // [HYPERPARAM] UWB range measurement noise covariance
   }
 
-  // void Navigation::sonarCallback(const sensor_msgs::msg::Range::SharedPtr msg)
-  void Navigation::sonarCallback(const px4_msgs::msg::DistanceSensor::SharedPtr msg)
+  void Navigation::px4_sonarCallback(const px4_msgs::msg::DistanceSensor::SharedPtr msg)
   {
     // double sonar_range = msg->range;
     double sonar_range = msg->current_distance;
 
-    double residual = (sonar_range) - (getState().position.z() - tis.z()); // Assuming sonar measures height
-    // std::cout << "Range : " << sonar_range << ", Current z : " << getState().position.z() << std::endl;
-    // std::cout << "Sonar Range: " << sonar_range << ", Estimated Height: " << getState().position.z() << ", Residual: " << residual << std::endl;
+    double residual = (sonar_range) - ( -(getState().position.z() - tis.z()) ); // Assuming sonar measures height
 
     MatXd Hk = MatXd::Zero(1, 12);
-    Hk(0, 2) = 1.0; // Derivative of measurement w.r.t z position
+    Hk(0, 2) = -1.0; // Derivative of measurement w.r.t z position
+
+    if (!init_alignment_ && !stop_check)
+    {
+      // RCLCPP_INFO(this->get_logger(), "Received Sonar Range Measurement: %.2f m", sonar_range);
+      measurementUpdate(getState(), Vec1d{ residual }, Hk, R_sonar); // [HYPERPARAM] Sonar measurement noise covariance
+    }
+  }
+
+  void Navigation::ros2_sonarCallback(const sensor_msgs::msg::Range::SharedPtr msg)
+  {
+    double sonar_range = msg->range;
+    // double sonar_range = msg->current_distance;
+
+    double residual = (sonar_range) - ( -(getState().position.z() - tis.z()) ); // Assuming sonar measures height
+
+    MatXd Hk = MatXd::Zero(1, 12);
+    Hk(0, 2) = -1.0; // Derivative of measurement w.r.t z position
 
     if (!init_alignment_ && !stop_check)
     {
@@ -286,18 +305,18 @@ namespace navigation
         Vec3d acc_mean = acc_accum / alignment_count_;
         Vec3d gyro_mean = gyro_accum / alignment_count_;
 
-        double phi = std::atan2(acc_mean(1), acc_mean(2)); // Roll
-        double theta = std::atan2(-acc_mean(0), std::sqrt(acc_mean(1) * acc_mean(1) + acc_mean(2) * acc_mean(2))); // Pitch
-        double psi = 0.0; 
+        // double phi = std::atan2(acc_mean(1), acc_mean(2)); // Roll
+        // double theta = std::atan2(-acc_mean(0), std::sqrt(acc_mean(1) * acc_mean(1) + acc_mean(2) * acc_mean(2))); // Pitch
+        // double psi = -1.0; 
 
-	std::cout << "Alignment Result : [ACC] = " << acc_mean.transpose() << ", [GYRO] = " << gyro_mean.transpose() << std::endl; 
+      	std::cout << "Alignment Result : [ACC] = " << acc_mean.transpose() << ", [GYRO] = " << gyro_mean.transpose() << std::endl; 
 
         // setState(init_pos_, init_att_, gyro_mean, Vec3d{1.0, 1.0, 1.0});
         // setState(getState().position, getState().quaternion, getState().gyro_bias, Vec3d{1.0, 1.0, 1.0}); // For DR Alignment
-        Mat3d Align_res = Cgb * Cbi * euler2dcm( Vec3d(phi, theta, 0.0) );
+        // Mat3d Align_res = Cgb * Cbi * euler2dcm( Vec3d(phi, theta, 0.0) );
 
         //setState(init_pos_, euler2quat( Vec3d{phi , theta, psi} ), gyro_mean, Vec3d{1.0, 1.0, 1.0}); 
-        setState(init_pos_, dcm2quat( Align_res ), gyro_mean, Vec3d{1.0, 1.0, 1.0});
+        setState(init_pos_, init_att_, gyro_mean, Vec3d{1.0, 1.0, 1.0});
 
         publishDronePath(getState().position, getState().quaternion);
 
@@ -319,15 +338,8 @@ namespace navigation
 
     Mat3d w_skew = skew33(angular_rate);
 
-    Vec3d please = radar_estimator_.getEgoVelocity();
     Vec3d new_position       = prev_state.position + Cgb*Cbi*(Cir*ego_velocity - w_skew*tir)*dt;
     
-    Vec3d temp_update = Cgb * Cbi * (Cir * ego_velocity - w_skew * tir);
-    // std::cout << "Current Update : " << temp_update.transpose() << std::endl;
-    // std::cout << "Ego Velocity : " << ego_velocity.transpose() << std::endl;
-    // std::cout << "Check Velocity : " << please.transpose() << std::endl;
-    // std::cout << "Rotation Param : Cgb - " << dcm2euler(Cgb).transpose() << ", Cbi - " << dcm2euler(Cbi).transpose() << std::endl; 
-
     // Vec4d new_quaternion     = quatUpdate(prev_state.quaternion, angular_rate, dt); 
     Vec4d new_quaternion     = quatUpdate(prev_state.quaternion, Cbi*angular_rate, dt);
     // Vec3d new_velocity       = Cir*ego_velocity;
@@ -452,22 +464,10 @@ namespace navigation
       px4_pose.pose_frame = px4_msgs::msg::VehicleOdometry::POSE_FRAME_FRD;
   
       Vec3d px4_cur_pos = getState().position;
-      Vec3d px4_cur_att = quat2euler(getState().quaternion);    
+      Vec4d px4_cur_att = getState().quaternion;   
 
-      if (ref_frame_ == 0 )
-      {
-        px4_pose.position = { (float)px4_cur_pos(0), -(float)px4_cur_pos(1), -(float)px4_cur_pos(2) };
-        
-        Vec4d px4_cur_att_q = euler2quat( Vec3d(px4_cur_att(0), -px4_cur_att(1), -px4_cur_att(2)) );
-        px4_pose.q = { (float)px4_cur_att_q(0), (float)px4_cur_att_q(1), (float)px4_cur_att_q(2), (float)px4_cur_att_q(3) };
-      }
-      else if(ref_frame_ == 1 )
-      {
-        px4_pose.position = { (float)px4_cur_pos(0), (float)px4_cur_pos(1), (float)px4_cur_pos(2) };
-      
-        Vec4d px4_cur_att_q = euler2quat( Vec3d(px4_cur_att(0), px4_cur_att(1), px4_cur_att(2))  );
-        px4_pose.q = { (float)px4_cur_att_q(0), (float)px4_cur_att_q(1), (float)px4_cur_att_q(2), (float)px4_cur_att_q(3) };
-      }
+      px4_pose.position = { (float)px4_cur_pos(0), (float)px4_cur_pos(1), (float)px4_cur_pos(2) };
+      px4_pose.q = { (float)px4_cur_att(0), (float)px4_cur_att(1), (float)px4_cur_att(2), (float)px4_cur_att(3) };
 
       px4_pose.velocity_frame = px4_msgs::msg::VehicleOdometry::VELOCITY_FRAME_FRD;
       px4_pose.velocity.fill(std::numeric_limits<float>::quiet_NaN());
@@ -493,23 +493,11 @@ namespace navigation
 
   void Navigation::publishDronePath(Vec3d position, Vec4d quaternion)
   {
-    Mat3d temp_C = euler2dcm( Vec3d(M_PI, 0.0, M_PI) );
+    // Mat2d temp_C = euler2dcm( Vec3d(M_PI, 0.0, M_PI) );
 
     pose.header.frame_id = "map";
     pose.header.stamp = this->get_clock()->now();
 
-    // Vec3d global_pos = position + tgb;
-    // Vec4d global_att = quat2euler(quaternion);
-
-    // pose.pose.position.x = global_pos(0);
-    // pose.pose.position.y = global_pos(1);
-    // pose.pose.position.z = global_pos(2);    
-
-    // pose.pose.orientation.x = global_att(1);
-    // pose.pose.orientation.y = global_att(2);
-    // pose.pose.orientation.z = global_att(3);
-    // pose.pose.orientation.w = global_att(0);
-    //
     pose.pose.position.x = position(0);
     pose.pose.position.y = position(1);
     pose.pose.position.z = position(2);    
@@ -649,6 +637,9 @@ namespace navigation
     this->declare_parameter("init_att_cov", std::vector<double>{1.0 * d2r, 1.0 * d2r, 1.0 * d2r});
     this->declare_parameter("init_gyro_bias_cov", std::vector<double>{0.001 * d2r, 0.001 * d2r, 0.001 * d2r});
     this->declare_parameter("init_scale_cov", std::vector<double>{0.0001, 0.0001, 0.0001});
+    
+    this->declare_parameter("px4_pos_cov", std::vector<double>{0.01, 0.01, 0.01});
+    this->declare_parameter("px4_att_cov", std::vector<double>{0.01, 0.01, 0,01});
 
     this->declare_parameter("gyro_noise", std::vector<double>{0.01 * d2r, 0.01 * d2r, 0.01 * d2r});
     this->declare_parameter("gyro_bias_noise", std::vector<double>{0.0001 * d2r, 0.0001 * d2r, 0.0001 * d2r});
@@ -671,9 +662,15 @@ namespace navigation
     std::vector<double> init_att_vec = this->get_parameter("init_att").as_double_array();
     std::vector<double> init_gyro_bias_vec = this->get_parameter("init_gyro_bias").as_double_array();
 
+    std::vector<double> px4_pos_vec = this->get_parameter("px4_pos_cov").as_double_array();
+    std::vector<double> px4_att_vec = this->get_parameter("px4_att_cov").as_double_array();
+
     init_pos_ = Vec3d{init_pos_vec[0], init_pos_vec[1], init_pos_vec[2]};
     init_att_ = euler2quat(Vec3d{init_att_vec[0] * d2r, init_att_vec[1] * d2r, init_att_vec[2] * d2r});
     init_gyro_bias_ = Vec3d{init_gyro_bias_vec[0], init_gyro_bias_vec[1], init_gyro_bias_vec[2]};
+
+    px4_pos_cov_ = Vec3d{ px4_pos_vec[0], px4_pos_vec[1], px4_pos_vec[2] };
+    px4_att_cov_ = Vec3d{ px4_att_vec[0], px4_att_vec[1], px4_att_vec[2] };
 
     Pk.diagonal() << p_pos_vec[0], p_pos_vec[1], p_pos_vec[2],
                      p_att_vec[0]*d2r, p_att_vec[1]*d2r, p_att_vec[2]*d2r,

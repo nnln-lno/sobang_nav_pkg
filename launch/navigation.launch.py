@@ -11,7 +11,7 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     
     nav_pkg_dir = get_package_share_directory('sobang_navigation')
-    nav_param_file = os.path.join(nav_pkg_dir, 'param', 'nav_params.yaml')
+    nav_param_file = os.path.join(nav_pkg_dir, 'param', 'nav_params_incsl.yaml')
     
     rviz_dir = os.path.join(nav_pkg_dir, 'rviz', 'navigation_visualizer.rviz')
 

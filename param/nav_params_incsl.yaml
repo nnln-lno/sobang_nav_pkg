@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     # ID of anchors in environments 
-    anchor_id_lists : [1,2,3,4,5,6,7,8]
+    anchor_id_lists : [1,2,3,4]
     # Reference coordinate system : Local NED Frame = Front(x) Right(y) Down(z)
     # Anchor Position must be matched with Global Reference Frame definition 
     anchor_pos_x : [ 1.500,  3.000,   4.500,   6.000,   1.500,   3.000,   4.500,   6.000]
@@ -13,12 +13,12 @@
     body_R_imu : [180.0, 0.0, 90.0]
     # radar to imu transformation
     imu_t_radar : [0.0, 0.0, 0.0]
-    imu_R_radar : [0.0, 0.0, 90.0]
+    imu_R_radar : [0.0, 0.0, 0.0]
     # uwb tag to imu translation
     imu_t_uwb : [0.0, 0.0, 0.0]
     # snoar to imu translation
     imu_t_sonar : [0.0, 0.0, 0.0]
-   
+    
 sobang_navigation_node:
     # Reference coordinate system : Forward-Left-Up
   ros__parameters:  
@@ -31,13 +31,14 @@ sobang_navigation_node:
     radar_topic : "/mmwave/radarScan"
     radar_rate : 20    
     # Sonar Setting
-    sonar_topic : "/fmu/out/distance_sensor"
+    sonar_topic : "/sonar/range"
     sonar_rate : 10
 
     # Prior Information (with respect to  Reference Frame)
     init_pos : [0.0, 0.0, 0.0]
-    init_att : [0.0, 0.0, 0.0]
-    init_gyro_bias : [-0.000564293, -0.0294942, 0.00547228]
+    init_att : [0.0, 0.0, -90.0]
+    init_gyro_bias : [0.0098788, -0.00823005, -0.00635545]
+    # init_gyro_bias : [-0.000564293, -0.0294942, 0.00547228]
     
     # Standard Deviations of initial state covariance param
     init_pos_cov : [0.8, 0.8, 0.8]    
@@ -50,11 +51,11 @@ sobang_navigation_node:
     gyro_bias_noise : [0.0001, 0.0001, 0.0001]
     radar_vel_noise : [0.005, 0.005, 0.005]
     radar_scale_noise : [0.0001, 0.0001, 0.0001]
-
+    
     # Standard Devications of position, attitude for px4 Measurement
     px4_pos_cov : [0.01, 0.01, 0.01]
     px4_att_cov : [0.01, 0.01, 0.01]
-    
+
     # Measurement Covariance
     uwb_cov : [5.5, 5.5, 4.5]
     uwb_range_cov : 5.5

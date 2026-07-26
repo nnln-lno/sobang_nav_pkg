@@ -58,6 +58,9 @@ public:
   Vec4d init_att_ = Vec4d::Zero();
   Vec3d init_gyro_bias_ = Vec3d::Zero();
 
+  Vec3d px4_pos_cov_ = Vec3d::Zero();
+  Vec3d px4_att_cov_ = Vec3d::Zero();
+
   Vec12d process_noise = Vec12d::Zero();  
 
   Mat12d Fk = Mat12d::Zero(); 
@@ -111,8 +114,8 @@ private:
   rclcpp::Subscription<sobang_navigation::msg::UwbData>::SharedPtr uwb_range_subscriber_;
 
   // Subscriber - Subscribe Sonar Information
-  // rclcpp::Subscription<sensor_msgs::msg::Range>::SharedPtr sonar_subscriber_;
-  rclcpp::Subscription<px4_msgs::msg::DistanceSensor>::SharedPtr sonar_subscriber_;
+  rclcpp::Subscription<sensor_msgs::msg::Range>::SharedPtr ros2_sonar_subscriber_;
+  rclcpp::Subscription<px4_msgs::msg::DistanceSensor>::SharedPtr px4_sonar_subscriber_;
 
   // Publisher - Publish path to Rviz2 [TBD]
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_publisher_;
@@ -131,8 +134,8 @@ private:
 
   void uwbRangeCallback(const sobang_navigation::msg::UwbData::SharedPtr msg);
 
-  // void sonarCallback(const sensor_msgs::msg::Range::SharedPtr msg);
-  void sonarCallback(const px4_msgs::msg::DistanceSensor::SharedPtr msg);
+  void ros2_sonarCallback(const sensor_msgs::msg::Range::SharedPtr msg);
+  void px4_sonarCallback(const px4_msgs::msg::DistanceSensor::SharedPtr msg);
 
   // Time delta calculation for state estimation
   // IMU
