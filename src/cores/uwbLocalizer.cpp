@@ -42,19 +42,21 @@ namespace navigation
 
         for(uint i=0; i < num_anchors_; i++)
         {
-            id_matcher_[i] = anchor_id_lists_[i];
-            uwb_struct_[i].anchor_id = anchor_id_lists_[i];
-            uwb_struct_[i].anchor_position_x_ = anchor_list_x_[i];
-            uwb_struct_[i].anchor_position_y_ = anchor_list_y_[i];
-            uwb_struct_[i].anchor_position_z_ = anchor_list_z_[i];
+            uint uidx = anchor_id_lists_[i] - 1;            
+            id_matcher_[uidx] = uidx + 1;
+            uwb_struct_[uidx].anchor_id = uidx + 1;
+            uwb_struct_[uidx].anchor_position_x_ = anchor_list_x_[uidx];
+            uwb_struct_[uidx].anchor_position_y_ = anchor_list_y_[uidx];
+            uwb_struct_[uidx].anchor_position_z_ = anchor_list_z_[uidx];
 
-            setUwbMarker(uwb_struct_[i]);
+            setUwbMarker(uwb_struct_[uidx]);
 
             anchor_marker_array.markers.push_back(single_anchor_);
             text_marker_array.markers.push_back(text_marker_);
 
-            anchor_positions_.push_back(Vec3d(anchor_list_x_[i], anchor_list_y_[i], anchor_list_z_[i]));
-        }
+            anchor_positions_[uidx] = Vec3d(anchor_list_x_[uidx], anchor_list_y_[uidx], anchor_list_z_[uidx]);            
+
+        } 
 
         mark_timer_ = this->create_wall_timer(100ms, std::bind(&UWBLocalizer::timer_callback, this));
 
@@ -120,12 +122,13 @@ namespace navigation
 
             for (int opt = 0; opt < iter; opt++)
             {
-                MatXd J(4,3);
+                MatXd J(count,3);
                 Vec4d res;
 
                 // Use most 4 closest anchors for multilateration
-                for (int i = 0; i < 4; i++)
-                {                    
+                for (int i = 0; i < count; i++)
+                {   
+                    // std::cout << "We got : " << anc_id[idx[i]] << " with position :" << anchor_positions_[anc_id[idx[i]]].transpose() << std::endl; 
                     J.row(i) = (anchor_positions_[anc_id[idx[i]]] - opt_pos).transpose() / (anchor_positions_[anc_id[idx[i]]] - opt_pos).norm(); 
                     res(i) = dist[idx[i]] - (anchor_positions_[anc_id[idx[i]]] - opt_pos).norm();
                 }
