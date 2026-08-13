@@ -123,7 +123,7 @@ namespace navigation
             for (int opt = 0; opt < iter; opt++)
             {
                 MatXd J(count,3);
-                Vec4d res;
+                VecXd res(count);
 
                 // Use most 4 closest anchors for multilateration
                 for (int i = 0; i < count; i++)
