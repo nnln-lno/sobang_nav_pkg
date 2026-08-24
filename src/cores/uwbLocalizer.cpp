@@ -63,8 +63,8 @@ UWBLocalizer::UWBLocalizer() : Node("uwb_localizer_node") {
   // this->create_publisher<geometry_msgs::msg::PointStamped>("/uwb/position",
   // 100);
   uwb_position_publisher_ =
-      this->create_publisher<geometry_msgs::msg::PointStamped>(
-          "/uwb/tuned_position", 100);
+      this->create_publisher<geometry_msgs::msg::PointStamped>("/uwb/position",
+                                                               100);
 
   uwb_range_publisher_ =
       this->create_publisher<sobang_navigation::msg::UwbData>(
@@ -95,6 +95,7 @@ void UWBLocalizer::multilateration(
   }
 
   Vec3d opt_pos = getCurrentPosition();
+  // Vec3d opt_pos = Vec3d{0.0, 0.0, 0.0};
 
   // Multilateration part
   std::vector<float> dist = msg->dist; // UWB range measurements to anchors

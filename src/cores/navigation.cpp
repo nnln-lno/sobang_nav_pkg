@@ -19,7 +19,7 @@ Navigation::Navigation() : Node("sobang_navigation_node"), count_(0) {
       "/nav/localState", 10);
 
   px4_state_publisher_ = this->create_publisher<px4_msgs::msg::VehicleOdometry>(
-      "/fmu/in/tuned_vehicle_visual_odometry", 10);
+      "/fmu/in/vehicle_visual_odometry", 10);
 
   // 레이더 센서 데이터 취득을 위한 Subscriber 생성
   radar_subscriber_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -37,7 +37,7 @@ Navigation::Navigation() : Node("sobang_navigation_node"), count_(0) {
   //   _1));
   uwb_position_subscriber_ =
       this->create_subscription<geometry_msgs::msg::PointStamped>(
-          "/uwb/tuned_position", 100,
+          "/uwb/position", 100,
           std::bind(&Navigation::uwbPositionCallback, this, _1));
 
   uwb_range_subscriber_ =
@@ -226,7 +226,12 @@ void Navigation::imu_callback(const sensor_msgs::msg::Imu::SharedPtr i_msg) {
   if (!has_problems_) {
     DeadReckoning(getState(), radar_estimator_.getEgoVelocity(), w_b,
                   getImuTimeDelta());
+
+    timeUpdate(getState(), radar_estimator_.getEgoVelocity(), w_b,
+               getImuTimeDelta());
   } else {
+    DeadReckoning(getState(), Vec3d{0.0, 0.0, 0.0}, w_b, getImuTimeDelta());
+
     timeUpdate(getState(), Vec3d{0.0, 0.0, 0.0}, w_b, getImuTimeDelta());
   }
 
@@ -357,7 +362,8 @@ void Navigation::px4_sonarCallback(
 
   if (!init_alignment_ && !stop_check) {
     // RCLCPP_INFO(this->get_logger(), "Received Sonar Range Measurement: %.2f
-    // m", sonar_range);
+    // m",
+    //            sonar_range);
     measurementUpdate(
         getState(), Vec1d{residual}, Hk,
         R_sonar); // [HYPERPARAM] Sonar measurement noise covariance
@@ -385,7 +391,8 @@ void Navigation::ros2_sonarCallback(
 
   if (!init_alignment_ && !stop_check) {
     // RCLCPP_INFO(this->get_logger(), "Received Sonar Range Measurement: %.2f
-    // m", sonar_range);
+    // m",
+    //            sonar_range);
     measurementUpdate(
         getState(), Vec1d{residual}, Hk,
         R_sonar); // [HYPERPARAM] Sonar measurement noise covariance
@@ -583,9 +590,8 @@ void Navigation::timer_callback() {
   // msg.count);
 
   if (!init_alignment_ && radar_valid >= 30) {
-    RCLCPP_INFO_ONCE(
-        this->get_logger(),
-        "Radar sensor is aborted.. No more navigation topic is published !");
+    RCLCPP_INFO_ONCE(this->get_logger(), "Radar sensor is aborted.. Position "
+                                         "is replaced by uwb position info !");
     has_problems_ = true;
   }
 

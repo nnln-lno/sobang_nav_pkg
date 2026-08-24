@@ -2,11 +2,12 @@
   ros__parameters:
     # ID of anchors in environments 
     anchor_id_lists : [1,2,3,4,5,6,7,8]
+    gt_anchor_id_lists : [1,2,3,4,5,6,7,8]
     # Reference coordinate system : Local NED Frame = Front(x) Right(y) Down(z)
     # Anchor Position must be matched with Global Reference Frame definition 
-    anchor_pos_x : [ 0.000,  8.000,  15.000,  15.000,  8.000,  0.000,  0.000,  0.000]
-    anchor_pos_y : [ 1.840,  1.840,  1.840,  -2.160,  -2.160,  -2.160,  0.000,  0.000]
-    anchor_pos_z : [ 0.000,  0.000,  0.000,  -0.000,  0.000,  -0.000,  0.000,  0.000]
+    anchor_pos_x : [ -0.810, -0.810, -0.810,  1.815,  4.440,  4.440,  4.440,  1.815]
+    anchor_pos_y : [  0.810, -1.620, -4.050, -4.050, -4.050, -1.620,  0.810, -1.620]
+    anchor_pos_z : [  0.000,  0.000,  0.000,  -0.000,  0.000,-0.000,  0.000,  0.000]
     # anchor_pos_x : [2.0, 2.0, 9.0, 12.36, 12.9, 10.6, 12.9, 10.6]
     # anchor_pos_y : [-1.2, 1.2, 1.2, 0.0, 4.3, 4.3, 13.1, 13.1]
     # anchor_pos_z : [0.0, 0.0, 0.0, -1.66, 0.0, 0.0, 0.0, 0.0]
@@ -15,11 +16,11 @@
     body_t_imu : [0.0, 0.0, 0.0]
     body_R_imu : [180.0, 0.0, 90.0]
     # radar to imu transformation
-    imu_t_radar : [0.0, 0.06, -0.12]
+    imu_t_radar : [0.0, 0.05, -0.1]
     imu_R_radar : [0.0, 0.0, 90.0]
     # uwb tag to imu translation
-    imu_t_uwb : [0.0, -0.06, -0.12]
-    # snoar to imu translation
+    imu_t_uwb : [0.0, -0.05, -0.1]
+    # snoar to imu transformationn
     imu_t_sonar : [0.0, 0.0, -0.18]
    
 sobang_navigation_node:
