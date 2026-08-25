@@ -260,7 +260,8 @@ void Navigation::uwbPositionCallback(
   Hk.block<3, 3>(0, 0) = Mat3d::Identity();
   Hk.block<3, 3>(0, 3) =
       -skew33(quat2dcm(getState().quaternion) * (Cbi * tiu + tbi));
-  if (!init_alignment_ && !stop_check) {
+  // if (!init_alignment_ && !stop_check) {
+  if (!init_alignment_) {
     // RCLCPP_INFO(this->get_logger(), "Received UWB Position Measurement:
     // [%.2f, %.2f, %.2f]", msg->point.x, msg->point.y, msg->point.z);
     measurementUpdate(getState(), residual, Hk, R_uwb);
@@ -303,9 +304,9 @@ void Navigation::uwbPositionCallback(
     px4_pose.angular_velocity = {(float)omega(0), (float)omega(1),
                                  (float)omega(2)};
 
-    px4_pose.position_variance = {0.01, 0.01, 0.01};
+    px4_pose.position_variance = {px4_pos_cov_(0), px4_pos_cov_(1), px4_pos_cov_(2)};
     px4_pose.velocity_variance = {0.01, 0.01, 0.01};
-    px4_pose.orientation_variance = {0.01, 0.01, 0.01};
+    px4_pose.orientation_variance = {px4_att_cov_(0), px4_att_cov_(1), px4_att_cov_(2)};
 
     px4_state_publisher_->publish(px4_pose);
   }
@@ -360,7 +361,8 @@ void Navigation::px4_sonarCallback(
   MatXd Hk = MatXd::Zero(1, 12);
   Hk(0, 2) = -1.0; // Derivative of measurement w.r.t z position
 
-  if (!init_alignment_ && !stop_check) {
+  // if (!init_alignment_ && !stop_check) {
+  if (!init_alignment_) {
     // RCLCPP_INFO(this->get_logger(), "Received Sonar Range Measurement: %.2f
     // m",
     //            sonar_range);
@@ -389,7 +391,8 @@ void Navigation::ros2_sonarCallback(
   MatXd Hk = MatXd::Zero(1, 12);
   Hk(0, 2) = -1.0; // Derivative of measurement w.r.t z position
 
-  if (!init_alignment_ && !stop_check) {
+  // if (!init_alignment_ && !stop_check) {
+  if (!init_alignment_) {
     // RCLCPP_INFO(this->get_logger(), "Received Sonar Range Measurement: %.2f
     // m",
     //            sonar_range);
@@ -645,9 +648,9 @@ void Navigation::px4_timer_callback() {
     px4_pose.angular_velocity = {(float)omega(0), (float)omega(1),
                                  (float)omega(2)};
 
-    px4_pose.position_variance = {0.01, 0.01, 0.01};
+    px4_pose.position_variance = {px4_pos_cov_(0), px4_pos_cov_(1), px4_pos_cov_(2)};
     px4_pose.velocity_variance = {0.01, 0.01, 0.01};
-    px4_pose.orientation_variance = {0.01, 0.01, 0.01};
+    px4_pose.orientation_variance = {px4_att_cov_(0), px4_att_cov_(1), px4_att_cov_(2)};
 
     px4_state_publisher_->publish(px4_pose);
   }
