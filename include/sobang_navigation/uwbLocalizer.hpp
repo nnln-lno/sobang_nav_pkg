@@ -36,7 +36,7 @@ namespace navigation
     public:
         UWBLocalizer();
 
-        std::vector<Vec3d> anchor_positions_; // UWB Anchor positions in the world frame
+        std::vector<Vec3d> anchor_positions_{ std::vector<Vec3d>(20) }; // UWB Anchor positions in the world frame
 
         std::string uwb_topic_ = "/uwb/range";
         bool imu_ned_ = false;
