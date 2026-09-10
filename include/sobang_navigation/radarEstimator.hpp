@@ -2,9 +2,9 @@
 #define _RADAR_DEAD_RECKONING_HPP_
 
 #include "rclcpp/rclcpp.hpp"
-#include "vector"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
+#include "vector"
 
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/conversions.h>
@@ -13,46 +13,44 @@
 
 #include "sobang_navigation/navTools.hpp"
 
-namespace navigation
-{
-    class RadarEstimator
-    {
-    public:
-        RadarEstimator();        
+namespace navigation {
+class RadarEstimator {
+public:
+  RadarEstimator();
 
-        bool egoVelocityEstimator();
-        bool radarParser(const sensor_msgs::msg::PointCloud2::SharedPtr &radar_msg);
+  bool egoVelocityEstimator();
+  bool radarParser(const sensor_msgs::msg::PointCloud2::SharedPtr &radar_msg);
+  
+  MatXd getPointMatrix();
+  Vec3d getEgoVelocity();
+  MatXd getCurrentPoints();
+  
+  void setEgoVelocity(Vec3d velocity);
+  void setCurrentPoints(MatXd points);
+  void setPreviousPoints(MatXd points);
 
-        MatXd getPointMatrix();    
-        void setEgoVelocity(Vec3d velocity);
-        Vec3d getEgoVelocity();
+  void pointAccumulation(MatXd points);
 
-        void setCurrentPoints(MatXd points);
-        void setPreviousPoints(MatXd points);
+  bool simpleRadar2DIcp(Mat3d R, Vec3d t);
 
-        MatXd getCurrentPoints();
+  icpState getIcpPose() { return icp_pose; }
 
-        bool simpleRadar2DIcp(Mat3d R, Vec3d t);
+private:
+  uint16_t point_size_;
+  uint16_t zero_velocity_count_ = 0;
 
-        icpState getIcpPose() { return icp_pose; }
+  Vec3d ego_velocity_;
 
-    private:            
+  MatXd radar_points_;
+  VecXd radar_velocities_;
 
-        uint16_t point_size_;
-        uint16_t zero_velocity_count_ = 0;
+  // ICP map the current to previous => point w.r.t previous frame.
+  MatXd current_points_;  // target_points
+  MatXd previous_points_; // source_points
+  MatXd accum_points_;
 
-        Vec3d ego_velocity_;        
+  icpState icp_pose;
+};
+} // namespace navigation
 
-        MatXd radar_points_;
-        VecXd radar_velocities_;
-
-        // ICP map the current to previous => point w.r.t previous frame.
-        MatXd current_points_; // target_points
-        MatXd previous_points_; // source_points        
-
-        icpState icp_pose;
-                
-    };
-}  // namespace navigation
-
-#endif  // _RADAR_DEAD_RECKONING_HPP_
+#endif // _RADAR_DEAD_RECKONING_HPP_
