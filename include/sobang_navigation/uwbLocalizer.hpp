@@ -36,7 +36,7 @@ namespace navigation
     public:
         UWBLocalizer();
 
-        std::vector<Vec3d> anchor_positions_; // UWB Anchor positions in the world frame
+        std::vector<Vec3d> anchor_positions_{ std::vector<Vec3d>(20) }; // UWB Anchor positions in the world frame
 
         std::string uwb_topic_ = "/uwb/range";
         bool imu_ned_ = false;
@@ -58,10 +58,6 @@ namespace navigation
         uwbMeasurement uwb_struct_[20];
         int id_matcher_[20] = {-1};
 
-        rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr uwb_marker_publisher_;
-
-        rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr uwb_text_publisher_;
-
         rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr uwb_position_publisher_;
 
         rclcpp::Publisher<sobang_navigation::msg::UwbData>::SharedPtr uwb_range_publisher_;
@@ -73,22 +69,10 @@ namespace navigation
         rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr drone_pose_subscriber_;
 
         void multilateration(const uwb_driver::msg::UwbRange::SharedPtr msg);
-        
-        void setUwbMarker(uwbMeasurement uwb_info);        
 
         void setCurrentPose(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
         Vec3d getCurrentPosition();
-
-        void timer_callback();
-
-        rclcpp::TimerBase::SharedPtr mark_timer_;
-
-        visualization_msgs::msg::Marker single_anchor_;
-        visualization_msgs::msg::Marker text_marker_;
-
-        visualization_msgs::msg::MarkerArray anchor_marker_array;
-        visualization_msgs::msg::MarkerArray text_marker_array;
 
         bool valid = false;
 

@@ -30,6 +30,7 @@ namespace navigation
     typedef Eigen::Matrix<double, 6, 6> Mat6d;
     typedef Eigen::Matrix<double, 10, 10> Mat10d;
     typedef Eigen::Matrix<double, 12, 12> Mat12d;
+    typedef Eigen::Matrix<double, 18, 18> Mat18d;
     typedef Eigen::MatrixXd MatXd;
 
     typedef Eigen::Quaterniond Quat;
