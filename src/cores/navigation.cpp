@@ -97,10 +97,10 @@ void Navigation::imu_callback(const sensor_msgs::msg::Imu::SharedPtr i_msg) {
     if (do_align_) 
     {
       RCLCPP_INFO_ONCE(this->get_logger(), "[WARN] DONT MOVE THE DRONE UNTIL INITIAL ALIGNMENT IS COMPLETE! (%.1f seconds)", align_time_);
-      initAlignment(msg);
     } else {
       RCLCPP_INFO_ONCE(this->get_logger(), "[INFO] INITIAL ALIGNMENT SKIPPED! BE CAREFUL WITH THE DRONE'S MOVEMENT AT THE BEGINNING.");
     }    
+    initAlignment(msg);
     return; // Skip processing until initial alignment is complete
   }
 
@@ -159,10 +159,10 @@ void Navigation::px4_imu_callback(const px4_msgs::msg::SensorCombined::SharedPtr
     if (do_align_) 
     {
       RCLCPP_INFO_ONCE(this->get_logger(), "[WARN] DONT MOVE THE DRONE UNTIL INITIAL ALIGNMENT IS COMPLETE! (%.1f seconds)", align_time_);
-      px4_initAlignment(msg);
     } else {
       RCLCPP_INFO_ONCE(this->get_logger(), "[INFO] INITIAL ALIGNMENT SKIPPED! BE CAREFUL WITH THE DRONE'S MOVEMENT AT THE BEGINNING.");
     }    
+    px4_initAlignment(msg);
     return; // Skip processing until initial alignment is complete
   }
 
