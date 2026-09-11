@@ -109,8 +109,8 @@ public:
    * 센서의 출력 주기나 dt들을 계산하기 위한 변수들
    */
   ///@{
-  uint16_t imu_rate = 200;
-  uint16_t radar_rate = 20;
+  double imu_rate = 200;
+  double radar_rate = 20;
   double px4_fc_rate_ = 10.0;
 
   double imu_previous_time_ = 0.0; 
