@@ -24,15 +24,15 @@ sobang_navigation_node:
   ros__parameters:
     ### IMU Setting 
     imu_topic : "/fmu/out/sensor_combined"
-    imu_rate: 200
+    imu_rate: 200.0
     do_align : false
     align_time : 30.0
     ### Radar Setting
     radar_topic : "/mmwave/radarScan"
-    radar_rate : 20    
+    radar_rate : 20.0    
     # Sonar Setting
     sonar_topic : "/fmu/out/distance_sensor"
-    sonar_rate : 10
+    sonar_rate : 10.0
 
     # Prior Information (with respect to  Reference Frame)
     init_pos : [0.0, 0.0, 0.0]
