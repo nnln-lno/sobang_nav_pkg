@@ -114,10 +114,25 @@ void Navigation::imu_callback(const sensor_msgs::msg::Imu::SharedPtr i_msg) {
     return; // Skip processing if time is not moving forward
   }
 
-  setImuTimeDelta();
+  if (getImuCurrentTime() <= getImuPreviousTime())
+  {
+    RCLCPP_WARN(this->get_logger(), "[WARN] Received IMU data with non-increasing timestamp. Set delta to default.");
+    imu_time_delta_ = 1.0 / imu_rate; // Reset to default time delta based on the expected IMU rate
+  }
+
+  if (abs(getImuCurrentTime() - getImuPreviousTime()) >= ((1.0 / imu_rate) * 100.0))
+  {
+      RCLCPP_WARN(this->get_logger(), "[WARN] IMU time delta is too large. Skipping this measurement.");
+      imu_time_delta_ = 1.0 / imu_rate; // Reset to default time delta based on the expected IMU rate
+  }
+  else
+  {
+      setImuTimeDelta();
+  }
+
   if (imu_cnt == 1)
   {
-    imu_time_delta_ = 1.0 / imu_rate; // For the first IMU callback, set a default time delta based on the expected IMU rate
+      imu_time_delta_ = 1.0 / imu_rate; // For the first IMU callback, set a default time delta based on the expected IMU rate
   }
 
   Vec3d w_b = Vec3d{msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z} - getState().gyro_bias;
@@ -171,11 +186,26 @@ void Navigation::px4_imu_callback(const px4_msgs::msg::SensorCombined::SharedPtr
     return;
   }
 
-  setImuTimeDelta();
+  if (getImuCurrentTime() <= getImuPreviousTime())
+  {
+    RCLCPP_WARN(this->get_logger(), "[WARN] Received IMU data with non-increasing timestamp. Set delta to default.");
+    imu_time_delta_ = 1.0 / imu_rate; // Reset to default time delta based on the expected IMU rate
+  }
+
+  if (abs(getImuCurrentTime() - getImuPreviousTime()) >= ((1.0 / imu_rate) * 100.0))
+  {
+      RCLCPP_WARN(this->get_logger(), "[WARN] IMU time delta is too large. Skipping this measurement.");
+      imu_time_delta_ = 1.0 / imu_rate; // Reset to default time delta based on the expected IMU rate
+  }
+  else
+  {
+      setImuTimeDelta();
+  }
+
   if (imu_cnt == 1)
   {
-    imu_time_delta_ = 1.0 / imu_rate; // For the first IMU callback, set a default time delta based on the expected IMU rate
-  }  
+      imu_time_delta_ = 1.0 / imu_rate; // For the first IMU callback, set a default time delta based on the expected IMU rate
+  }
 
   Vec3d w_b = Vec3d{msg->gyro_rad[0], msg->gyro_rad[1],msg->gyro_rad[2]} - getState().gyro_bias;
   omega = w_b;
@@ -972,8 +1002,9 @@ void Navigation::param_setting() {
   this->declare_parameter("sonar_topic", "/sonar/range");
   this->declare_parameter("align_time", 10.0);
 
-  this->declare_parameter("imu_rate", 200);
-  this->declare_parameter("radar_rate", 20);
+  this->declare_parameter("imu_rate", 200.0);
+  this->declare_parameter("radar_rate", 20.0);
+  this->declare_parameter("sonar_rate", 10.0);
   this->declare_parameter("init_pos", std::vector<double>{0.0, 0.0, 0.0});
   this->declare_parameter("init_att", std::vector<double>{0.0, 0.0, 0.0});
   this->declare_parameter("init_gyro_bias", std::vector<double>{0.0, 0.0, 0.0});
